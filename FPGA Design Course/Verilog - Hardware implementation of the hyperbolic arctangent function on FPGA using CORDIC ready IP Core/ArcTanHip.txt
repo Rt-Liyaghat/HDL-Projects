@@ -1,0 +1,67 @@
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.MATH_REAL.ALL;
+
+entity artanh_interp is
+port (
+x_in  : in  real;
+y_out : out real
+);
+end entity;
+
+architecture Behavioral of artanh_interp is
+constant N : integer := 40;  
+type real_array is array(0 to N-1) of real;  
+
+
+constant x_table : real_array := (  
+    -0.99, -0.94, -0.89, -0.84, -0.79, -0.74, -0.69, -0.64, -0.59, -0.54,  
+    -0.49, -0.44, -0.39, -0.34, -0.29, -0.24, -0.19, -0.14, -0.09, -0.04,  
+     0.00,  0.05,  0.10,  0.15,  0.20,  0.25,  0.30,  0.35,  0.40,  0.45,  
+     0.50,  0.55,  0.60,  0.65,  0.70,  0.75,  0.80,  0.85,  0.90,  0.99  
+);  
+
+constant y_table : real_array := (  
+    -2.6466524124, -1.7380493449, -1.4219258711, -1.2211735177, -1.0714316841, -0.9504793806, -0.8479557552, -0.7581737447, -0.6776660678, -0.604155603,  
+    -0.5360603366, -0.4722308044, -0.4118000345, -0.354092529, -0.2985662637,  -0.2447741127, -0.1923371692, -0.1409255761, -0.0902441879, -0.04002135338,  
+     0.00,  0.0500417293,  0.1003353477,  0.1511404359,  0.2027325541,  0.2554128119,  0.3095196042,  0.3654437543,  0.4236489302,  0.4847002786,  
+     0.5493061443,  0.6183813136,  0.6931471806,  0.7752987062,  0.8673005277,  0.9729550745,  1.0986122887,  1.256152812,  1.4722194896,  2.6466524124  
+);
+
+begin
+
+process(x_in)  
+    variable i : integer;  
+    variable x1, x2, y1, y2 : real;  
+    variable found : boolean := false;  
+begin  
+    if x_in < x_table(0) or x_in > x_table(N-1) then  
+        y_out <= 0.0;  
+    else  
+        for i in 0 to N-2 loop  
+            if (x_in >= x_table(i)) and (x_in <= x_table(i+1)) then  
+                x1 := x_table(i);  
+                x2 := x_table(i+1);  
+                y1 := y_table(i);  
+                y2 := y_table(i+1);  
+
+                if x2 /= x1 then  
+                    y_out <= y1 + (x_in - x1)*(y2 - y1)/(x2 - x1);  
+                else  
+                    y_out <= y1;  
+                end if;  
+
+                found := true;  
+                exit;  
+            end if;  
+        end loop;  
+
+        if not found then  
+            y_out <= 0.0;  
+        end if;  
+    end if;  
+end process;
+
+end architecture;

@@ -1,0 +1,220 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date:    07:43:32 12/28/2011 
+-- Design Name: 
+-- Module Name:    LCD_show - Behavioral 
+-- Project Name: 
+-- Target Devices: 
+-- Tool versions: 
+-- Description: 
+--
+-- Dependencies: 
+--
+-- Revision: 
+-- Revision 0.01 - File Created
+-- Additional Comments: 
+--
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use work.asci_types.all;
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx primitives in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity LCD_show is
+
+	port( 
+		clk_20m_in : in std_logic;
+		lcd_reset : in std_logic;
+		lcd_d : out std_logic_vector (7 downto 4);
+      lcd_rs, lcd_rw, lcd_e : out std_logic;
+		
+		
+				--------------------------liy
+		
+      col  : in  STD_LOGIC_VECTOR (3 downto 0) ;
+      row  : out STD_LOGIC_VECTOR (3 downto 0) 
+		);
+		
+end LCD_show;
+
+architecture Behavioral of LCD_show is
+--*********************		signals 	***************************
+	signal clk_400 : std_logic;           -- clock with 4us period, used for debug
+	signal temp : std_logic_vector (7 downto 0);
+	signal lcd_e_temp : std_logic;
+	signal STR1 : lcd_matrix;
+--	signal clk_20m_out : std_logic; 
+--	signal clk_d_out : std_logic;
+	signal STR2 : lcd_number4;
+
+					--------------------------liy
+
+   signal NOW_row : INTEGER range 0 to 3  := 0 ;
+   signal scn_t  : INTEGER := 0 ;
+   signal KeyVal     : INTEGER range 0 to 15 := 0 ;
+	
+	
+
+--*********************		COMPONENTs 	***************************
+
+	component generic_freq_div is
+    port( clk_in : in std_logic; clk : out std_logic);
+  end component;
+  
+  component lcd1 is
+    port( clk_400, clk, rst : in std_logic; 
+          lcd_data : out std_logic_vector (7 downto 0);
+          lcd_ena, lcd_rw, lcd_rs : out std_logic;
+			 STR1 : IN lcd_matrix;
+          led : out std_logic_vector (0 downto 0) );
+  end component;
+  
+begin
+
+
+
+				--------------------------liy
+
+----  str1 <= (  ) ; 
+
+				
+				
+div1000: generic_freq_div
+  port map (clk_in => clk_20m_in, clk => clk_400);
+  
+lcd_1: lcd1 ---change 8-bit lcd to 4-bit mode
+  port map (clk => clk_20m_in, rst => lcd_reset, clk_400 => clk_400, lcd_rs => lcd_rs, 
+            lcd_ena => lcd_e_temp, lcd_rw => lcd_rw,
+				lcd_data (7 downto 0) => temp ,STR1 => STR1, led(0) => open );
+				
+	aaa :process (clk_20m_in,lcd_e_temp)	
+		variable counter : integer;
+			variable aaa:  std_logic;
+			variable aaaa:  std_logic;
+		begin
+
+			if rising_edge( clk_20m_in) then
+					if lcd_e_temp='1' then 
+						aaa:='1'; 
+					end if;
+					if  aaa='1' then
+						--if counter < 62 then
+								counter:=counter+1;
+						--	end if;
+							if counter =1 then
+								aaaa := '1';
+								lcd_d (7 downto 4) <= temp(7 downto 4) ;
+							elsif counter =40 then
+								aaaa := '0';
+							elsif counter =80 then
+								aaaa := '1';
+								lcd_d (7 downto 4) <= temp(3 downto 0) ;
+							elsif	counter >120 then
+								aaaa := '0';
+								counter :=0;
+								aaa :='0';
+							end if;
+							
+					end if;						
+			end if;
+			lcd_e <= aaaa;
+		end process; --aaa
+		
+	
+					--------------------------liy
+
+	
+	
+   process(clk_20m_in)
+   begin
+      if (clk_20m_in'EVENT AND clk_20m_in='1') then
+         scn_t <= scn_t + 1;
+         if scn_t = 50000 then
+            scn_t <= 0;
+            NOW_row <= (NOW_row + 1) mod 4;
+         end if;
+      end if;
+   end process;
+
+   process(NOW_row)
+   begin
+      case NOW_row is
+         when 0 => row <= "1110";
+         when 1 => row <= "1101";
+         when 2 => row <= "1011";
+         when 3 => row <= "0111";
+         when others => row <= "1111";
+      end case;
+   end process;
+
+   process(clk_20m_in)
+   begin
+      if (clk_20m_in'EVENT AND clk_20m_in='1') then
+         case NOW_row is
+            when 0 =>
+               if    col = "1110" then KeyVal <= 0 ;
+               elsif col = "1101" then KeyVal <= 1 ;
+               elsif col = "1011" then KeyVal <= 2 ;
+               elsif col = "0111" then KeyVal <= 3 ;
+               end if;
+            when 1 =>
+               if    col = "1110" then KeyVal <= 4 ;
+               elsif col = "1101" then KeyVal <= 5 ;
+               elsif col = "1011" then KeyVal <= 6 ;
+               elsif col = "0111" then KeyVal <= 7 ;
+               end if;
+        when 2 =>
+               if    col = "1110" then KeyVal <= 8 ;
+               elsif col = "1101" then KeyVal <= 9 ;
+               elsif col = "1011" then KeyVal <= 10 ;
+               elsif col = "0111" then KeyVal <= 11;
+               end if;
+            when 3 =>
+               if    col = "1110" then KeyVal <= 12;
+               elsif col = "1101" then KeyVal <= 13;
+               elsif col = "1011" then KeyVal <= 14;
+               elsif col = "0111" then KeyVal <= 15;
+               end if;
+        when others => null;
+         end case;
+      end if;
+   end process;
+	
+			process(KeyVal)
+		begin
+			case KeyVal is
+				when 0 => str1 <= (1 => '0', others => ' '); -- 0
+				when 1 => str1 <= (1 => '1', others => ' '); -- 1
+				when 2 => str1 <= (1 => '2', others => ' '); -- 2
+				when 3 => str1 <= (1 => '3', others => ' '); -- 3
+				when 4 => str1 <= (1 => '4', others => ' '); -- 4
+				when 5 => str1 <= (1 => '5', others => ' '); -- 5
+				when 6 => str1 <= (1 => '6', others => ' '); -- 6
+				when 7 => str1 <= (1 => '7', others => ' '); -- 7
+				when 8 => str1 <= (1 => '8', others => ' '); -- 8
+				when 9 => str1 <= (1 => '9', others => ' '); -- 9
+				when 10 => str1 <= (1 => '1', 2 => '0', others => ' '); -- A
+				when 11 => str1 <= (1 => '1', 2 => '1', others => ' '); -- b
+				when 12 => str1 <= (1 => '1', 2 => '2', others => ' '); -- C
+				when 13 => str1 <= (1 => '1', 2 => '3', others => ' '); -- d
+				when 14 => str1 <= (1 => '1', 2 => '4', others => ' '); -- E
+				when 15 => str1 <= (1 => '1', 2 => '5', others => ' '); -- F
+				when others => str1 <= (1 => ' ', others => ' ');
+			end case;
+		end process;		
+					
+
+		
+		
+
+end Behavioral;
+
